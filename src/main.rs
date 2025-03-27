@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let postgres_password = get_env("DB_PASSWORD");
 
     let problem_url = format!("{}/problem?access_token={}", BASE_URL, access_token);
-    let solution_url = format!("{}/solve?access_token={}", BASE_URL, access_token);
+    let solution_url = format!("{}/solve?access_token={}&playground=1", BASE_URL, access_token);
     let postgres_url = format!(
         "host={} dbname={} user={} password={}",
         postgres_host, postgres_db, postgres_user, postgres_password
@@ -57,15 +57,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let rows = postgres_client.query(PROBLEM_QUERY, &[])?;
     let _ = postgres_client.execute(RESET, &[])?;
 
-    println!("SSNs of alive criminals:");
-    for row in rows.iter() {
-        let ssn: &str = row.get(0);
-        println!("{}, ", ssn);
-    }
-
     let solution = serde_json::json!({
         "alive_ssns": rows.iter().map(|row| row.get::<usize, &str>(0)).collect::<Vec<&str>>()
     }); 
+
+    println!("Solution: {:?}", solution);
 
     let response = json_post(&solution_url, &solution)?;
 
